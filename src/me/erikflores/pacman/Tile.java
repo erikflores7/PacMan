@@ -1,3 +1,10 @@
+package me.erikflores.pacman;
+
+import me.erikflores.pacman.Entity.Entity;
+import me.erikflores.pacman.Entity.Food;
+import me.erikflores.pacman.Entity.Ghosts.Ghost;
+import me.erikflores.pacman.Entity.PacMan;
+
 import java.awt.*;
 
 public class Tile{
@@ -7,7 +14,8 @@ public class Tile{
     private Color color;
     private Rectangle tile;
     private Entity entity;
-    private boolean wall = false;
+    private Food food;
+    private boolean wall, intersection = false;
 
     public Tile(int pixels, Location location){
         this.pixels = pixels;
@@ -34,9 +42,17 @@ public class Tile{
         if(isWall()) {
             return false;
         }
-        if(hasFood()){
-            ((Food) this.entity).eat();
+        if(entity instanceof PacMan) {
+            if (hasFood()) {
+                (food).eat();
+                food = null;
+            }
         }
+
+        if(entity instanceof Food){
+            this.food = (Food) entity;
+        }
+
         this.entity = entity;
         return true;
     }
@@ -60,12 +76,19 @@ public class Tile{
         return this.wall;
     }
 
+    public void setIntersection(boolean intersection){
+        this.intersection = intersection;
+    }
+
+    public boolean isIntersection() {
+        return this.intersection;
+    }
     public boolean hasFood(){
-        return entity instanceof Food;
+        return (food != null);
     }
 
     public boolean hasGhost(){
-        return false;
+        return entity instanceof Ghost;
     }
 
     @Override

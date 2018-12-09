@@ -1,6 +1,14 @@
+package me.erikflores.pacman.Entity;
+
+import me.erikflores.pacman.Direction;
+import me.erikflores.pacman.Entity.Entity;
+import me.erikflores.pacman.Grid;
+import me.erikflores.pacman.Location;
+import me.erikflores.pacman.Tile;
+
 import java.awt.*;
 
-public class Food extends Entity{
+public class Food extends Entity {
 
     private Rectangle food;
     private Grid grid;
@@ -22,14 +30,10 @@ public class Food extends Entity{
     }
 
     @Override
-    public void move() {
-
-    }
+    public void move() {}
 
     @Override
-    public void setDirection(Direction direction) {
-
-    }
+    public void setDirection(Direction direction) {}
 
     @Override
     public Direction getDirection() {

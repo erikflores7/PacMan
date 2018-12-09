@@ -1,3 +1,5 @@
+package me.erikflores.pacman;
+
 public enum Direction {
 
     UP(0, -1), DOWN(0, 1), LEFT(-1, 0), RIGHT(1, 0);
@@ -19,7 +21,7 @@ public enum Direction {
 
     @Override
     public String toString(){
-        return "Direction: " + getClass().getName();
+        return "Direction: " + super.toString();
     }
 
 }

@@ -1,9 +1,15 @@
+package me.erikflores.pacman;
 /*
  * Filename: PacMan.java
  * Author: Erik Flores
  * Date: December 4, 2018
  *
  */
+import me.erikflores.pacman.Entity.Food;
+import me.erikflores.pacman.Entity.Ghosts.Blinky;
+import me.erikflores.pacman.Entity.Ghosts.Pinky;
+import me.erikflores.pacman.Entity.PacMan;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -23,16 +29,18 @@ public class PacManController extends JPanel implements ActionListener {
 
     private static final int WIDTH = 560;
     private static final int HEIGHT = 620;
-    private static final int DELAY = 250;
+    private static final int DELAY = 45;
     private static final int PIXELS = 20;
 
     private boolean isPaused = true;
 
-    private BufferedImage mapImage;
-    private Image resizedMapImage;
+    private Image mapImage;
+    private Image[] sprites = new Image[20];
 
     private Grid grid;
     private PacMan pacMan;
+    private Blinky blinky;
+    private Pinky pinky;
 
     private Timer timer = new Timer(DELAY, this);
 
@@ -42,6 +50,7 @@ public class PacManController extends JPanel implements ActionListener {
      * @param args Command line arguments, not used
      */
     public static void main(String[] args){
+
         JFrame frm = new JFrame();
 
         frm.setTitle("PacMan");
@@ -57,46 +66,71 @@ public class PacManController extends JPanel implements ActionListener {
      */
     public PacManController(){
 
-        // Adding the map image
+        // Adding the map image and sprites
         try {
-            mapImage = ImageIO.read(new File("pacmanMap.png"));
-        }catch(IOException e){
+            mapImage = ImageIO.read(new File("pacmanMap.png")).getScaledInstance(WIDTH, HEIGHT, Image.SCALE_DEFAULT);
+            BufferedImage spriteSheet = ImageIO.read(new File("pacmanSpriteSheet.png"));
+            sprites[0] = spriteSheet.getSubimage(4, 1, 13, 13).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[1] = spriteSheet.getSubimage(20, 1, 13, 13).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[2] = spriteSheet.getSubimage(4, 17, 13, 13).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[3] = spriteSheet.getSubimage(20, 17, 13, 13).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[4] = spriteSheet.getSubimage(4, 33, 13, 13).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[5] = spriteSheet.getSubimage(20, 33, 13, 13).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[6] = spriteSheet.getSubimage(4, 49, 13, 13).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[7] = spriteSheet.getSubimage(20, 49, 13, 13).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[8] = spriteSheet.getSubimage(4, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[9] = spriteSheet.getSubimage(20, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[10] = spriteSheet.getSubimage(4, 81, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[11] = spriteSheet.getSubimage(20, 81, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+
+        }catch(IOException e){ // Exit if any images not found
             System.out.println("Image not found!");
             System.exit(1);
         }
-        resizedMapImage = mapImage.getScaledInstance(WIDTH, HEIGHT, Image.SCALE_DEFAULT);
 
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
 
         timer.setInitialDelay(DELAY);
 
-        // Creates Grid with Tiles using 2D Map Array, and spawns PacMan
+        // Creates Grid with Tiles using 2D Map Array, and spawns PacMan, Blinky, and Pinky
         grid = new Grid(getMap(), PIXELS);
-        pacMan = new PacMan(new Location(1, 3), PIXELS, Direction.DOWN, grid);
+        pacMan = new PacMan(sprites, new Location(13, 25), PIXELS, Direction.LEFT, grid);
+        blinky = new Blinky(sprites, pacMan, grid, PIXELS);
+        pinky = new Pinky(sprites, pacMan, grid, PIXELS);
+
 
         addKeyListener(new PacManListener()); // Adds key listener
         timer.start(); // starts loop
     }
 
+    /**
+     * Draws the map image, sprites, and food
+     *
+     * @param g Graphics
+     */
     @Override
     protected void paintComponent(Graphics g){
         super.paintComponent(g);
         Graphics2D graphics = (Graphics2D) g;
 
-        graphics.drawImage(resizedMapImage, 0, 40, null);
+        graphics.drawImage(mapImage, 0, 40, null);
+
+        graphics.drawImage(pacMan.getImage(), pacMan.getX(), pacMan.getY(), null);
 
         for(Food food : grid.getFood()){
             graphics.setColor(Color.PINK);
             graphics.fill(food.getShape());
-            //graphics.draw(tiles.getShape());
         }
-        graphics.setColor(Color.YELLOW);
-        graphics.fill(pacMan.getShape());
+
+        graphics.drawImage(blinky.getImage(), blinky.getX(), blinky.getY(), null);
+        graphics.drawImage(pinky.getImage(), pinky.getX(), pinky.getY(), null);
+
+
     }
 
     /**
-     * Called every DELAY, if game is not paused, moves pacman
+     * Called every DELAY, if game is not paused, moves pacman, blinky, pinky
      *
      * @param e ActionEvent
      */
@@ -104,6 +138,8 @@ public class PacManController extends JPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if(!isPaused) {
             pacMan.move();
+            blinky.move();
+            pinky.move();
             repaint();
         }
     }
@@ -119,42 +155,42 @@ public class PacManController extends JPanel implements ActionListener {
     /**
      * gets 2D array of map tiles
      *
-     * @return 2D array of map tiles, 0 being empty, 1 being wall, 2 being with food, etc.
+     * @return 2D array of map tiles, 0 being empty, 1 being wall, 2 being with food, 3 intersection w/ food, 4 w/o, etc.
      */
     private int[][] getMap(){
         int[][] map = {
                 {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+                {1, 3, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 3, 1, 1, 3, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 3, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
-                {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+                {1, 3, 2, 2, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 2, 2, 3, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1},
-                {1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 1},
+                {1, 3, 2, 2, 2, 2, 3, 1, 1, 3, 2, 2, 3, 1, 1, 3, 2, 2, 3, 1, 1, 3, 2, 2, 2, 2, 3, 1},
                 {1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1},
                 {0, 0, 0, 0, 0, 1, 2, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1, 0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 1, 2, 1, 1, 4, 0, 0, 4, 0, 0, 4, 0, 0, 4, 1, 1, 2, 1, 0, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
                 {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
-                {0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 3, 0, 0, 4, 1, 0, 0, 0, 0, 0, 0, 1, 4, 0, 0, 3, 0, 0, 0, 0, 0, 0},
                 {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
                 {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 1, 2, 1, 1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 1, 2, 1, 0, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
                 {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
-                {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+                {1, 3, 2, 2, 2, 2, 3, 2, 2, 3, 2, 2, 3, 1, 1, 3, 2, 2, 3, 2, 2, 3, 2, 2, 2, 2, 3, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
-                {1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 1},
+                {1, 3, 2, 3, 1, 1, 3, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 3, 1, 1, 3, 2, 3, 1},
                 {1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1},
                 {1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1},
-                {1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 1},
+                {1, 3, 2, 3, 2, 2, 3, 1, 1, 3, 2, 2, 3, 1, 1, 3, 2, 2, 3, 1, 1, 3, 2, 2, 3, 2, 3, 1},
                 {1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1},
                 {1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1},
-                {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+                {1, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 1},
                 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
         return map;
     }

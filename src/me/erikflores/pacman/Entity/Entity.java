@@ -1,3 +1,8 @@
+package me.erikflores.pacman.Entity;
+
+import me.erikflores.pacman.Direction;
+import me.erikflores.pacman.Location;
+
 import java.awt.*;
 
 public abstract class Entity {
@@ -21,7 +26,7 @@ public abstract class Entity {
         this.name = name;
     }
 
-    private String getName(){
+    public String getName(){
         return this.name;
     }
 

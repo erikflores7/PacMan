@@ -1,3 +1,5 @@
+package me.erikflores.pacman;
+
 public class Location {
 
     private int column, row;
@@ -40,6 +42,15 @@ public class Location {
     @Override
     public String toString(){
         return "Location: (" + getColumn() + ", " + getRow() + ")";
+    }
+
+    @Override
+    public boolean equals(Object obj){
+        if(obj instanceof Location){
+            Location loc = (Location) obj;
+            return loc.getColumn() == getColumn() && loc.getRow() == getRow();
+        }
+        return false;
     }
 
 

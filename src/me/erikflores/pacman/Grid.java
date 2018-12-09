@@ -1,12 +1,24 @@
-import java.awt.*;
+package me.erikflores.pacman;
+
+import me.erikflores.pacman.Entity.Food;
+
 import java.util.ArrayList;
 
+/**
+ *  Handles the Tiles in the game
+ */
 public class Grid {
 
     private int columns, rows, pixels;
     private ArrayList<Tile> tiles = new ArrayList<>();
     private ArrayList<Food> foods = new ArrayList<>();
 
+    /**
+     * Creates a Grid of Tiles using the 2D array map
+     *
+     * @param map 2D array of information for tiles
+     * @param pixels Amount of pixels per tile
+     */
     public Grid(int[][] map, int pixels){
         setPixels(pixels);
 
@@ -41,30 +53,45 @@ public class Grid {
         return this.rows;
     }
 
+    /**
+     *  Creates the grid using the 2D array
+     *
+     * @param map 2D array with information on each tile
+     */
     private void createTiles(int[][] map){
-        clear();
+        clear(); // Clears all tiles
         setRows(map.length);
-        setColumns(map[0].length);
+        setColumns(map[0].length); // Sets Rows and Columns using map array
 
         for(int r = 0; r < getRows(); r++){
             for(int c = 0; c < getColumns(); c++){
                 Tile tile = new Tile(pixels, new Location(c, r));
-                tiles.add(tile);
-                switch(map[r][c]){
+                tiles.add(tile); // Creates tile and adds it to list
+                switch(map[r][c]){ // Checks the information provided by 2D array on this specific tile
                     case 1: tile.setWall(true); break;
-                    case 0: break;
-                    case 2:
+                    case 0: break; // NONE
+                    case 2: // FOOD
                         Food food = new Food(tile, this);
                         foods.add(food);
                         tile.addEntity(food);
                         break;
-                    case 3: /*SPAWN*/ break;
-                    case 4: /*SPECIAL*/ break;
+                    case 3: // Food and Intersection
+                        Food food2 = new Food(tile, this);
+                        foods.add(food2);
+                        tile.addEntity(food2);
+                        tile.setIntersection(true);
+                        break;
+                    case 4: // Intersection
+                        tile.setIntersection(true);
+                        break;
                 }
             }
         }
     }
 
+    /**
+     * Creating board without 2D array, no longer used
+     */
     private void createTiles(){
         clear();
         for(int r = 0; r < getRows(); r++){
@@ -78,16 +105,33 @@ public class Grid {
         return this.tiles;
     }
 
+    /**
+     *
+     * @return List of Food objects on map
+     */
     public ArrayList<Food> getFood(){
         return this.foods;
     }
 
+    /**
+     *  Removes Food from list, need to call PacManController to take care of scoring/level reset/etc.
+     *
+     * @param food Food object to remove
+     */
     public void removeFood(Food food){
         if(food != null){
             foods.remove(food);
         }
     }
 
+    /**
+     *
+     * Gets tile at provided column, row
+     *
+     * @param column Column of tile to get
+     * @param row Row of tile to get
+     * @return Specified tile if it exists, null if it doesn't
+     */
     public Tile getTileAt(int column, int row){
         if(column >= 0 && column < getColumns() && row >= 0 && row < getRows()){
             return tiles.get((row) * (getColumns()) + column );
@@ -95,6 +139,9 @@ public class Grid {
         return null;
     }
 
+    /**
+     * Clears the tiles
+     */
     public void clear(){
         tiles.clear();
     }
