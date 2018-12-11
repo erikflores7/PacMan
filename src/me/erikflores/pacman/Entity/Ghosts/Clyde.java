@@ -8,21 +8,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Blinky extends Ghost {
+public class Clyde extends Ghost {
 
     private PacMan pacMan;
     private Grid grid;
     private boolean atIntersection = true;
-    private static final Location SCATTER_TARGET = new Location(27, 0);
+    private static final Location SCATTER_TARGET = new Location(0, 35);
 
-    public Blinky(Image[] sprites, PacMan pacMan, Grid grid, int size){
-        super("Blinky", sprites, size, new Location(13, 13));
+    public Clyde(Image[] sprites, PacMan pacMan, Grid grid, int size){
+        super("Clyde", sprites, size, new Location(13, 13));
         this.pacMan = pacMan;
         this.grid = grid;
     }
 
     /**
-     * Blinky chases PacMan and compares distance to him when changing direction
+     * Clyde chases PacMan until the distance becomes 8 or less
      */
     @Override
     public void move(){
@@ -37,10 +37,12 @@ public class Blinky extends Ghost {
                 Direction bestDirection = possibleDirections.get(0);
                 double smallestDistance = 100000;
                 for(Direction possible : possibleDirections){
+
                     Tile nextTile = grid.getTileAt(getLocation().getColumn() + possible.getX(), getLocation().getRow() + possible.getY());
                     if(nextTile == null || nextTile.isWall() || (nextTile.isGhostDoor() && getMode() != Mode.FRIGHTENED)){
                         continue;
                     }
+
                     double x, y;
                     if(getMode() == Mode.CHASE) {
                         x = (pacMan.getLocation().getColumn()) - (nextTile.getLocation().getColumn());
@@ -49,7 +51,14 @@ public class Blinky extends Ghost {
                         x = (SCATTER_TARGET.getColumn()) - (nextTile.getLocation().getColumn());
                         y = (SCATTER_TARGET.getRow()) - (nextTile.getLocation().getRow());
                     }
+
                     double distance = Math.sqrt((x * x) + (y * y)); // Distance to PacMan
+                    if(distance <= 8){ // If he is within 8 tiles of Pacman go back to Scatter target instead
+                        x = (SCATTER_TARGET.getColumn() - nextTile.getLocation().getColumn());
+                        y = (SCATTER_TARGET.getRow() - nextTile.getLocation().getRow());
+                    }
+                    distance = Math.sqrt((x * x) + (y * y)); // Distance to his scatter target
+
                     if(distance < smallestDistance){
                         bestDirection = possible;
                         smallestDistance = distance;

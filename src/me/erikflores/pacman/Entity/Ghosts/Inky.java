@@ -8,21 +8,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Blinky extends Ghost {
+public class Inky extends Ghost {
 
     private PacMan pacMan;
+    private Blinky blinky;
     private Grid grid;
     private boolean atIntersection = true;
-    private static final Location SCATTER_TARGET = new Location(27, 0);
+    private static final Location SCATTER_TARGET = new Location(27, 35);
 
-    public Blinky(Image[] sprites, PacMan pacMan, Grid grid, int size){
-        super("Blinky", sprites, size, new Location(13, 13));
+    public Inky(Image[] sprites, PacMan pacMan, Blinky blinky, Grid grid, int size){
+        super("Inky", sprites, size, new Location(11, 13));
         this.pacMan = pacMan;
+        this.blinky = blinky;
         this.grid = grid;
     }
 
     /**
-     * Blinky chases PacMan and compares distance to him when changing direction
+     * Inky chases PacMan and uses Blinky's distance to decide where to move
      */
     @Override
     public void move(){
@@ -31,25 +33,30 @@ public class Blinky extends Ghost {
 
             if(checkTunnel()){return;} // Check if in tunnel to change location to other side
 
-            if (atIntersection){
+            if (atIntersection){ // Check if have to make decision on new direction
+
                 List<Direction> possibleDirections = new ArrayList<>(Arrays.asList(Direction.values()));
                 possibleDirections.remove(getOppositeDirection()); // Can't reverse
                 Direction bestDirection = possibleDirections.get(0);
                 double smallestDistance = 100000;
-                for(Direction possible : possibleDirections){
+
+                for(Direction possible : possibleDirections){ // Check directions available and compare distance
                     Tile nextTile = grid.getTileAt(getLocation().getColumn() + possible.getX(), getLocation().getRow() + possible.getY());
                     if(nextTile == null || nextTile.isWall() || (nextTile.isGhostDoor() && getMode() != Mode.FRIGHTENED)){
-                        continue;
+                        continue; // Can't move to it, skip it
                     }
                     double x, y;
-                    if(getMode() == Mode.CHASE) {
-                        x = (pacMan.getLocation().getColumn()) - (nextTile.getLocation().getColumn());
-                        y = (pacMan.getLocation().getRow()) - (nextTile.getLocation().getRow());
-                    }else{
+                    if(getMode() == Mode.CHASE) { // Set target tile
+                        Location blinkyLocation = blinky.getLocation();
+                        x = blinkyLocation.getColumn() + (2 * (pacMan.getLocation().getColumn() + (pacMan.getDirection().getX() * 2) - blinkyLocation.getColumn()));
+                        y = blinkyLocation.getRow() + (2 * (pacMan.getLocation().getRow() + (pacMan.getDirection().getY() * 2) - blinkyLocation.getRow()));
+                        x = (x - nextTile.getLocation().getColumn());
+                        y = (y - nextTile.getLocation().getRow());
+                    }else{ // Go to scatter mode target tile
                         x = (SCATTER_TARGET.getColumn()) - (nextTile.getLocation().getColumn());
                         y = (SCATTER_TARGET.getRow()) - (nextTile.getLocation().getRow());
                     }
-                    double distance = Math.sqrt((x * x) + (y * y)); // Distance to PacMan
+                    double distance = Math.sqrt((x * x) + (y * y)); // Distance to target location
                     if(distance < smallestDistance){
                         bestDirection = possible;
                         smallestDistance = distance;
@@ -64,7 +71,7 @@ public class Blinky extends Ghost {
             newLocation.move(getDirection().getX(), getDirection().getY());
             Tile newTile = grid.getTileAt(newLocation.getColumn(), newLocation.getRow());
 
-            if (newTile != null && newTile.addEntity(this)) {
+            if (newTile != null && newTile.addEntity(this)) { // Add to new tile and move
                 grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).removeEntity();
                 atIntersection = newTile.isIntersection();
                 setLocation(newLocation);
@@ -76,6 +83,11 @@ public class Blinky extends Ghost {
         }
     }
 
+    /**
+     * Checks if Inky is in tunnel and heading outside map to teleport to other side
+     *
+     * @return True if heading outside map and in tunnel
+     */
     private boolean checkTunnel(){
         if(getLocation().getColumn() == 27 && getDirection() == Direction.RIGHT && getLocation().getRow() == 16){
             grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).removeEntity();

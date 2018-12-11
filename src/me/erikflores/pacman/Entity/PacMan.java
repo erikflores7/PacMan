@@ -6,14 +6,12 @@ import me.erikflores.pacman.Location;
 import me.erikflores.pacman.Tile;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
-
 /**
  *  Actual PacMan, handles its movement
  */
 public class PacMan extends Entity {
 
-    private Location location, spriteLocation;
+    private Location location, spriteLocation, spawn;
     private Direction direction, nextDirection;
     private Grid grid;
     private int size, counter;
@@ -21,18 +19,19 @@ public class PacMan extends Entity {
     private Image[] sprites;
 
     public PacMan(){
-        this(null, 0, 0, 0, Direction.RIGHT, null);
+        this(null, 0, 0, 0, null);
     }
 
-    public PacMan(Image[] sprites, int column, int row, int size, Direction direction, Grid grid){
-        this(sprites, new Location(column, row), size, direction, grid);
+    public PacMan(Image[] sprites, int column, int row, int size, Grid grid){
+        this(sprites, new Location(column, row), size, grid);
     }
 
-    public PacMan(Image[] sprites, Location location, int size, Direction direction, Grid grid){
+    public PacMan(Image[] sprites, Location location, int size, Grid grid){
         super("PacMan");
         setLocation(location);
         spriteLocation = new Location(getLocation().getColumn() * size - 5, getLocation().getRow() * size - 5);
-        setDirection(direction);
+        spawn = new Location(getLocation());
+        setDirection(Direction.LEFT);
         this.sprites = sprites;
         this.size = size;
         this.grid = grid;
@@ -51,6 +50,8 @@ public class PacMan extends Entity {
     public void move() {
 
         if(!moving) {
+
+            if(checkTunnel()){ return;}
 
             // If there is a queue'd up direction, check if we can finally move to it
             if (getNextDirection() != null) {
@@ -74,11 +75,15 @@ public class PacMan extends Entity {
             newLocation.move(getDirection().getX(), getDirection().getY());
             Tile newTile = grid.getTileAt(newLocation.getColumn(), newLocation.getRow());
 
-            if (newTile != null && newTile.addEntity(this)) {
-                grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).removeEntity();
-                setLocation(newLocation);
-                moving = true;
-                animate();
+            if (newTile != null) {
+                if(newTile.hasGhost()){
+                    grid.collided();
+                }else if(newTile.addEntity(this)) {
+                    grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).removeEntity();
+                    setLocation(newLocation);
+                    moving = true;
+                    animate();
+                }
             }
         }else{
             animate();
@@ -87,6 +92,7 @@ public class PacMan extends Entity {
     }
 
     private void animate(){
+
         if(moving){
 
             Direction direction = getDirection();
@@ -166,6 +172,35 @@ public class PacMan extends Entity {
             return sprites[index + 1];
         }
         return sprites[index];
+    }
+
+    public void restart(){
+        setLocation(spawn);
+        moving = false;
+        spriteLocation = new Location(getLocation().getColumn() * size - 5, getLocation().getRow() * size - 5);
+        grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).addEntity(this);
+        this.direction = null;
+        setDirection(Direction.LEFT);
+    }
+
+    private boolean checkTunnel(){
+        if(getLocation().getColumn() == 27 && getDirection() == Direction.RIGHT && getLocation().getRow() == 16){
+            grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).removeEntity();
+            setLocation(new Location(0, 16));
+            grid.getTileAt(0, 16).addEntity(this);
+            this.spriteLocation = new Location(getLocation().getColumn() * 20 - 10, getLocation().getRow() * 20 - 5);
+            this.moving = true;
+            return true;
+        }else if(getLocation().getColumn() == 0 && getDirection() == Direction.LEFT && getLocation().getRow() == 16){
+            grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).removeEntity();
+            setLocation(new Location(27, 16));
+            grid.getTileAt(27, 16).addEntity(this);
+            this.spriteLocation = new Location(getLocation().getColumn() * 20, getLocation().getRow() * 20 - 5);
+            this.moving = true;
+            return true;
+        }
+
+        return false;
     }
 
     public int getX(){

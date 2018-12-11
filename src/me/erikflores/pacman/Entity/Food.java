@@ -20,8 +20,12 @@ public class Food extends Entity {
         food = new Rectangle(tile.getLocation().getColumn() * 20 + 8, tile.getLocation().getRow() * 20 + 8, 4, 4);
     }
 
-    public void eat(){
-        grid.removeFood(this);
+    /**
+     * Passes on whether there are more food pellets left or not
+     * @return True if there are more food pellets left
+     */
+    public boolean eat(){
+        return grid.removeFood(this);
     }
 
     @Override

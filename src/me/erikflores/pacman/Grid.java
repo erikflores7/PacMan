@@ -9,20 +9,22 @@ import java.util.ArrayList;
  */
 public class Grid {
 
+    private PacManController controller;
     private int columns, rows, pixels;
     private ArrayList<Tile> tiles = new ArrayList<>();
     private ArrayList<Food> foods = new ArrayList<>();
-
+    private int[][] map;
     /**
      * Creates a Grid of Tiles using the 2D array map
      *
      * @param map 2D array of information for tiles
      * @param pixels Amount of pixels per tile
      */
-    public Grid(int[][] map, int pixels){
+    public Grid(int[][] map, int pixels, PacManController controller){
         setPixels(pixels);
-
         createTiles(map);
+        this.map = map;
+        this.controller = controller;
     }
 
     public Grid(int columns, int rows, int pixels){
@@ -58,18 +60,21 @@ public class Grid {
      *
      * @param map 2D array with information on each tile
      */
-    private void createTiles(int[][] map){
+    private void createTiles(int[][] map) {
         clear(); // Clears all tiles
         setRows(map.length);
         setColumns(map[0].length); // Sets Rows and Columns using map array
 
-        for(int r = 0; r < getRows(); r++){
-            for(int c = 0; c < getColumns(); c++){
+        for (int r = 0; r < getRows(); r++) {
+            for (int c = 0; c < getColumns(); c++) {
                 Tile tile = new Tile(pixels, new Location(c, r));
                 tiles.add(tile); // Creates tile and adds it to list
-                switch(map[r][c]){ // Checks the information provided by 2D array on this specific tile
-                    case 1: tile.setWall(true); break;
-                    case 0: break; // NONE
+                switch (map[r][c]) { // Checks the information provided by 2D array on this specific tile
+                    case 1:
+                        tile.setWall(true);
+                        break;
+                    case 0:
+                        break; // NONE
                     case 2: // FOOD
                         Food food = new Food(tile, this);
                         foods.add(food);
@@ -84,11 +89,14 @@ public class Grid {
                     case 4: // Intersection
                         tile.setIntersection(true);
                         break;
+                    case 5:
+                        tile.setGhostDoor(true);
+                        break; // Ghost door
+                    case 6: tile.setTunnel(true); break;
                 }
             }
         }
     }
-
     /**
      * Creating board without 2D array, no longer used
      */
@@ -117,11 +125,23 @@ public class Grid {
      *  Removes Food from list, need to call PacManController to take care of scoring/level reset/etc.
      *
      * @param food Food object to remove
+     *
+     * @return True if there are still more food pellets to collect
      */
-    public void removeFood(Food food){
+    public boolean removeFood(Food food){
         if(food != null){
             foods.remove(food);
+            controller.eatFood();
+            if(foods.size() == 0){
+                controller.nextLevel();
+                return false;
+            }
         }
+        return true;
+    }
+
+    public void collided(){
+        controller.die();
     }
 
     /**
@@ -144,6 +164,10 @@ public class Grid {
      */
     public void clear(){
         tiles.clear();
+    }
+
+    public void restart(){
+        createTiles(map);
     }
 
 

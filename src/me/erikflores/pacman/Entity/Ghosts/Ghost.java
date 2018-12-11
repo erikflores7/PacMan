@@ -5,12 +5,16 @@ import me.erikflores.pacman.Entity.Entity;
 
 import java.awt.*;
 
+/**
+ * Ghost super class, handles almost everything except movement so far
+ */
 public abstract class Ghost extends Entity {
 
+    private static Mode mode = Mode.CHASE;
     private Image[] sprites;
     private Location spriteLocation, tileLocation;
     private int spriteCounter = 0;
-    private Direction direction = Direction.DOWN;
+    private Direction direction = Direction.LEFT;
     private boolean moving = false;
     private int size = 20;
 
@@ -47,18 +51,57 @@ public abstract class Ghost extends Entity {
     @Override
     public Shape getShape() { return null; }
 
+    /***
+     * @return Gets the image of the ghost based on what direction they're facing
+     */
     public Image getImage(){
 
-        if(super.getName().equals("Blinky")) {
-            if (spriteCounter % 4 == 0 || spriteCounter % 4 == 3) {
-                return sprites[8];
-            }
-            return sprites[9];
-        }else if(super.getName().equals("Pinky")){
-            if (spriteCounter % 4 == 0 || spriteCounter % 4 == 3) {
-                return sprites[10];
-            }
-            return sprites[11];
+        int index = 0;
+        switch (getName()) {
+            case "Blinky":
+                switch (getDirection()) {
+                    case UP: index = 12; break;
+                    case DOWN: index = 14; break;
+                    case LEFT: index = 10; break;
+                    case RIGHT: index = 8; break;
+                }
+                if (spriteCounter % 4 == 0 || spriteCounter % 4 == 3) {
+                    return sprites[index];
+                }
+                return sprites[index + 1];
+            case "Pinky":
+                switch (getDirection()) {
+                    case UP: index = 20; break;
+                    case DOWN: index = 22; break;
+                    case LEFT: index = 18; break;
+                    case RIGHT: index = 16; break;
+                }
+                if (spriteCounter % 4 == 0 || spriteCounter % 4 == 3) {
+                    return sprites[index];
+                }
+                return sprites[index + 1];
+            case "Inky":
+                switch (getDirection()) {
+                    case UP: index = 28; break;
+                    case DOWN: index = 30; break;
+                    case LEFT: index = 26; break;
+                    case RIGHT: index = 24; break;
+                }
+                if (spriteCounter % 4 == 0 || spriteCounter % 4 == 3) {
+                    return sprites[index];
+                }
+                return sprites[index + 1];
+            case "Clyde":
+                switch (getDirection()) {
+                    case UP: index = 36; break;
+                    case DOWN: index = 38; break;
+                    case LEFT: index = 34; break;
+                    case RIGHT: index = 32; break;
+                }
+                if (spriteCounter % 4 == 0 || spriteCounter % 4 == 3) { // Iterate between the 2 different states
+                    return sprites[index];
+                }
+                return sprites[index + 1];
         }
         return sprites[0];
     }
@@ -74,9 +117,7 @@ public abstract class Ghost extends Entity {
     public void animate(){
         if(moving){
 
-            Direction direction = getDirection();
-
-            switch(direction){
+            switch(getDirection()){
                 case UP: spriteLocation.move(0, -4);
                     break;
                 case DOWN: spriteLocation.move(0, 4);
@@ -136,8 +177,20 @@ public abstract class Ghost extends Entity {
         return dir2;
     }
 
+    Mode getMode(){
+        return mode;
+    }
+
+    public static void setMode(Mode newMode){
+        mode = newMode;
+    }
+
     public int getSpriteCounter(){
         return this.spriteCounter;
+    }
+
+    void setSprite(Location location){
+        this.spriteLocation = new Location(location);
     }
 
     @Override

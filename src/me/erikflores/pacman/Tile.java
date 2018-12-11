@@ -9,16 +9,14 @@ import java.awt.*;
 
 public class Tile{
 
-    private int pixels;
     private Location location;
     private Color color;
     private Rectangle tile;
     private Entity entity;
     private Food food;
-    private boolean wall, intersection = false;
+    private boolean wall, intersection, ghostDoor, tunnel = false;
 
     public Tile(int pixels, Location location){
-        this.pixels = pixels;
         this.location = new Location(location);
 
         color = Color.BLACK;
@@ -41,16 +39,21 @@ public class Tile{
     public boolean addEntity(Entity entity){
         if(isWall()) {
             return false;
-        }
-        if(entity instanceof PacMan) {
+        }else if(entity instanceof PacMan) {
+            if(isGhostDoor()){
+                return false;
+            }
             if (hasFood()) {
-                (food).eat();
+                if(!food.eat()){ return false; }
                 food = null;
             }
-        }
-
-        if(entity instanceof Food){
+        }else if(entity instanceof Food){
             this.food = (Food) entity;
+            return true;
+        }else if(entity instanceof Ghost){
+            if(isGhostDoor() && entity.getDirection() == Direction.DOWN){
+                return false;
+            }
         }
 
         this.entity = entity;
@@ -61,8 +64,8 @@ public class Tile{
         entity = null;
     }
 
-    public boolean hasEntity(){
-        return (entity  != null);
+    public boolean hasPacman(){
+        return (entity  instanceof PacMan);
     }
 
     public void setWall(boolean wall){
@@ -83,6 +86,19 @@ public class Tile{
     public boolean isIntersection() {
         return this.intersection;
     }
+
+    public void setGhostDoor(boolean door){
+        this.ghostDoor = true;
+    }
+
+    public boolean isGhostDoor(){
+        return this.ghostDoor;
+    }
+
+    public void setTunnel(boolean tunnel){ this.tunnel = tunnel;}
+    public boolean isTunnel(){ return this.tunnel;}
+
+
     public boolean hasFood(){
         return (food != null);
     }
