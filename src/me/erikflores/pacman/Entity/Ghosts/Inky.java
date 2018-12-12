@@ -7,6 +7,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 public class Inky extends Ghost {
 
@@ -17,7 +18,7 @@ public class Inky extends Ghost {
     private static final Location SCATTER_TARGET = new Location(27, 35);
 
     public Inky(Image[] sprites, PacMan pacMan, Blinky blinky, Grid grid, int size){
-        super("Inky", sprites, size, new Location(11, 13));
+        super("Inky", sprites, size, new Location(12, 16));
         this.pacMan = pacMan;
         this.blinky = blinky;
         this.grid = grid;
@@ -34,37 +35,7 @@ public class Inky extends Ghost {
             if(checkTunnel()){return;} // Check if in tunnel to change location to other side
 
             if (atIntersection){ // Check if have to make decision on new direction
-
-                List<Direction> possibleDirections = new ArrayList<>(Arrays.asList(Direction.values()));
-                possibleDirections.remove(getOppositeDirection()); // Can't reverse
-                Direction bestDirection = possibleDirections.get(0);
-                double smallestDistance = 100000;
-
-                for(Direction possible : possibleDirections){ // Check directions available and compare distance
-                    Tile nextTile = grid.getTileAt(getLocation().getColumn() + possible.getX(), getLocation().getRow() + possible.getY());
-                    if(nextTile == null || nextTile.isWall() || (nextTile.isGhostDoor() && getMode() != Mode.FRIGHTENED)){
-                        continue; // Can't move to it, skip it
-                    }
-                    double x, y;
-                    if(getMode() == Mode.CHASE) { // Set target tile
-                        Location blinkyLocation = blinky.getLocation();
-                        x = blinkyLocation.getColumn() + (2 * (pacMan.getLocation().getColumn() + (pacMan.getDirection().getX() * 2) - blinkyLocation.getColumn()));
-                        y = blinkyLocation.getRow() + (2 * (pacMan.getLocation().getRow() + (pacMan.getDirection().getY() * 2) - blinkyLocation.getRow()));
-                        x = (x - nextTile.getLocation().getColumn());
-                        y = (y - nextTile.getLocation().getRow());
-                    }else{ // Go to scatter mode target tile
-                        x = (SCATTER_TARGET.getColumn()) - (nextTile.getLocation().getColumn());
-                        y = (SCATTER_TARGET.getRow()) - (nextTile.getLocation().getRow());
-                    }
-                    double distance = Math.sqrt((x * x) + (y * y)); // Distance to target location
-                    if(distance < smallestDistance){
-                        bestDirection = possible;
-                        smallestDistance = distance;
-                    }else if(distance == smallestDistance){ // Get one with priority
-                        bestDirection = getBestDirection(possible, bestDirection);
-                    }
-                }
-                setDirection(bestDirection);
+                changeDirection();
             }
 
             Location newLocation = new Location(getLocation());
@@ -106,6 +77,63 @@ public class Inky extends Ghost {
         }
 
         return false;
+    }
+
+    private void changeDirection(){
+        List<Direction> possibleDirections = new ArrayList<>(Arrays.asList(Direction.values()));
+
+        if(getMode() == Mode.FRIGHTENED){
+            while(true) {
+                setDirection(possibleDirections.get(new Random().nextInt(4)));
+                Tile next = grid.getTileAt(getLocation().getColumn() + getDirection().getX(), getLocation().getRow() + getDirection().getY());
+                if(!next.isWall() && !next.isGhostDoor()) {
+                    return;
+                }
+            }
+        }
+
+        if(getMode() == Mode.GHOST_HOUSE){
+            setDirection(getOppositeDirection());
+            return;
+        }
+
+        possibleDirections.remove(getOppositeDirection()); // Can't reverse
+        Direction bestDirection = possibleDirections.get(0);
+        double smallestDistance = 100000;
+
+        for(Direction possible : possibleDirections){ // Check directions available and compare distance
+            Tile nextTile = grid.getTileAt(getLocation().getColumn() + possible.getX(), getLocation().getRow() + possible.getY());
+            if(nextTile == null || nextTile.isWall() || (nextTile.isGhostDoor() && possible == Direction.DOWN && getMode() != Mode.DEAD)){
+                continue; // Can't move to it, skip it
+            }
+            double x, y;
+            if(grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).isGhostHouse()) { // get out of it
+                x = getSpawn().getColumn()  + 2 - nextTile.getLocation().getColumn();
+                y = getSpawn().getRow() - 6 - nextTile.getLocation().getRow();
+                setMode(Mode.CHASE);
+            }else if(getMode() == Mode.CHASE) { // Set target tile
+                Location blinkyLocation = blinky.getLocation();
+                x = blinkyLocation.getColumn() + (2 * (pacMan.getLocation().getColumn() + (pacMan.getDirection().getX() * 2) - blinkyLocation.getColumn()));
+                y = blinkyLocation.getRow() + (2 * (pacMan.getLocation().getRow() + (pacMan.getDirection().getY() * 2) - blinkyLocation.getRow()));
+                x = (x - nextTile.getLocation().getColumn());
+                y = (y - nextTile.getLocation().getRow());
+            }else if(getMode() == Mode.SCATTER){ // Go to scatter mode target tile
+                x = (SCATTER_TARGET.getColumn()) - (nextTile.getLocation().getColumn());
+                y = (SCATTER_TARGET.getRow()) - (nextTile.getLocation().getRow());
+            }else{ // DEAD
+                x = (getSpawn().getColumn() - (nextTile.getLocation().getColumn()));
+                y = (getSpawn().getRow() - (nextTile.getLocation().getRow()));
+            }
+
+            double distance = Math.sqrt((x * x) + (y * y)); // Distance to target location
+            if(distance < smallestDistance){
+                bestDirection = possible;
+                smallestDistance = distance;
+            }else if(distance == smallestDistance){ // Get one with priority
+                bestDirection = getBestDirection(possible, bestDirection);
+            }
+        }
+        setDirection(bestDirection);
     }
 
 }

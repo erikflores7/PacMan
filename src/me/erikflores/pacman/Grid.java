@@ -67,7 +67,7 @@ public class Grid {
 
         for (int r = 0; r < getRows(); r++) {
             for (int c = 0; c < getColumns(); c++) {
-                Tile tile = new Tile(pixels, new Location(c, r));
+                Tile tile = new Tile(new Location(c, r));
                 tiles.add(tile); // Creates tile and adds it to list
                 switch (map[r][c]) { // Checks the information provided by 2D array on this specific tile
                     case 1:
@@ -92,7 +92,17 @@ public class Grid {
                     case 5:
                         tile.setGhostDoor(true);
                         break; // Ghost door
-                    case 6: tile.setTunnel(true); break;
+                    case 6:
+                        tile.setGhostHouse(true);
+                        tile.setIntersection(true);
+                        break; // Ghost house
+                    case 7:
+                        Food food1 = new Food(tile, this);
+                        food1.setPower();
+                        foods.add(food1);
+                        tile.addEntity(food1);
+                        tile.setIntersection(true);
+                        break;
                 }
             }
         }
@@ -104,7 +114,7 @@ public class Grid {
         clear();
         for(int r = 0; r < getRows(); r++){
             for(int c = 0; c < getColumns(); c++){
-                tiles.add(new Tile(pixels, new Location(c, r)));
+                tiles.add(new Tile(new Location(c, r)));
             }
         }
     }
@@ -130,6 +140,9 @@ public class Grid {
      */
     public boolean removeFood(Food food){
         if(food != null){
+            if(food.isPower()){
+                controller.eatPower();
+            }
             foods.remove(food);
             controller.eatFood();
             if(foods.size() == 0){

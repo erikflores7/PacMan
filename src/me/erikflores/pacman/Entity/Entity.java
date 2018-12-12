@@ -20,7 +20,7 @@ public abstract class Entity {
 
     public abstract Direction getDirection();
 
-    public abstract Shape getShape();
+    public abstract Image getImage();
 
     private void setName(String name){
         this.name = name;

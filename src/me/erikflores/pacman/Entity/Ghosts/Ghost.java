@@ -10,20 +10,22 @@ import java.awt.*;
  */
 public abstract class Ghost extends Entity {
 
-    private static Mode mode = Mode.CHASE;
+    private Mode mode = Mode.CHASE;
     private Image[] sprites;
-    private Location spriteLocation, tileLocation;
+    private Location spriteLocation, tileLocation, spawnLocation;
     private int spriteCounter = 0;
     private Direction direction = Direction.LEFT;
     private boolean moving = false;
     private int size = 20;
+    private int speed = 4;
 
     public Ghost(String name, Image[] sprites, int size, Location startLocation){
         super(name);
         this.sprites = sprites;
         this.size = size;
+        this.spawnLocation = new Location(startLocation);
         this.spriteLocation = new Location(startLocation.getColumn() * size - 5, startLocation.getRow() * size - 5);
-        this.tileLocation = startLocation;
+        setLocation(startLocation);
     }
 
     @Override
@@ -48,15 +50,23 @@ public abstract class Ghost extends Entity {
         return this.direction;
     }
 
-    @Override
-    public Shape getShape() { return null; }
-
     /***
-     * @return Gets the image of the ghost based on what direction they're facing
+     * @return the image of the ghost based on what direction they're facing
      */
+    @Override
     public Image getImage(){
 
         int index = 0;
+
+        if(getMode() == Mode.DEAD){
+            return sprites[40];
+        }
+        if(getMode() == Mode.FRIGHTENED){
+            if (spriteCounter % 4 == 0 || spriteCounter % 4 == 3) {
+                return sprites[44];
+            }
+            return sprites[45];
+        }
         switch (getName()) {
             case "Blinky":
                 switch (getDirection()) {
@@ -116,15 +126,14 @@ public abstract class Ghost extends Entity {
 
     public void animate(){
         if(moving){
-
             switch(getDirection()){
-                case UP: spriteLocation.move(0, -4);
+                case UP: spriteLocation.move(0, -speed);
                     break;
-                case DOWN: spriteLocation.move(0, 4);
+                case DOWN: spriteLocation.move(0, speed);
                     break;
-                case LEFT: spriteLocation.move(-4, 0);
+                case LEFT: spriteLocation.move(-speed, 0);
                     break;
-                case RIGHT: spriteLocation.move(4, 0);
+                case RIGHT: spriteLocation.move(speed, 0);
                     break;
             }
             spriteCounter++;
@@ -177,12 +186,39 @@ public abstract class Ghost extends Entity {
         return dir2;
     }
 
-    Mode getMode(){
+    public Mode getMode(){
         return mode;
     }
 
-    public static void setMode(Mode newMode){
+    public void setMode(Mode newMode){
         mode = newMode;
+        if(isMoving()) {
+            // Wait for animation to end
+            Thread t = new Thread(() -> {
+                while(isMoving()){
+                    try { Thread.sleep(10); } catch(InterruptedException e) { /* we tried */}
+
+                }
+                if (!isMoving()) {
+                    switch(getMode()){
+                        case FRIGHTENED: setSpeed(2); setDirection(getOppositeDirection()); break;
+                        case DEAD: setSpeed(10); break;
+                        default: setSpeed(4);
+                    }
+                }
+            });
+            t.start();
+        }else{
+            switch(getMode()){
+                case FRIGHTENED: setSpeed(2); setDirection(getOppositeDirection()); break;
+                case DEAD: setSpeed(5); break;
+                default: setSpeed(4);
+            }
+        }
+    }
+
+    void setSpeed(int speed){
+        this.speed = speed;
     }
 
     public int getSpriteCounter(){
@@ -193,8 +229,27 @@ public abstract class Ghost extends Entity {
         this.spriteLocation = new Location(location);
     }
 
+    Location getSpawn(){
+        return this.spawnLocation;
+    }
+
+    public void respawn(){
+        setMode(Mode.CHASE);
+        setMoving(false);
+        spriteCounter = 0;
+        setDirection(Direction.LEFT);
+        setLocation(spawnLocation);
+        this.spriteLocation = new Location(getLocation().getColumn() * size - 5, getLocation().getRow() * size - 5);
+    }
+
+    public void die(){
+        setMode(Mode.DEAD);
+        spriteCounter = 0;
+    }
+
     @Override
     public String toString(){
-        return super.toString() + " Moving: " + isMoving() + " Direction: " + getDirection().toString();
+        return super.toString() + ": Moving? " + isMoving() + " " + getDirection().toString() + " Mode: " + getMode()
+                + " Tile: (" + getLocation().toString() + ")";
     }
 }

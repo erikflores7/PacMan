@@ -37,6 +37,7 @@ public class PacManController extends JPanel implements ActionListener {
 
     private boolean isPaused = true;
     private int waiting = 100;
+    private int frightTimer = 0;
 
     private Image mapImage;
     private Image[] sprites = new Image[64];
@@ -77,7 +78,7 @@ public class PacManController extends JPanel implements ActionListener {
         // Adding the map image and sprites
         try {
             mapImage = ImageIO.read(new File("pacmanMap.png")).getScaledInstance(WIDTH, HEIGHT, Image.SCALE_DEFAULT);
-            BufferedImage spriteSheet = ImageIO.read(new File("pacmanSpriteSheet.png"));
+            BufferedImage spriteSheet = ImageIO.read(new File("pacman.png"));
             sprites[0] = spriteSheet.getSubimage(4, 1, 13, 13).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
             sprites[1] = spriteSheet.getSubimage(20, 1, 13, 13).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
             sprites[2] = spriteSheet.getSubimage(4, 17, 13, 13).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
@@ -127,6 +128,16 @@ public class PacManController extends JPanel implements ActionListener {
             sprites[38] = spriteSheet.getSubimage(100, 113, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
             sprites[39] = spriteSheet.getSubimage(116, 113, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
 
+            // Eyes
+            sprites[40] = spriteSheet.getSubimage(132, 81, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[41] = spriteSheet.getSubimage(148, 81, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+
+            // Frightened
+            sprites[44] = spriteSheet.getSubimage(132, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[45] = spriteSheet.getSubimage(148, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+
+
+
         }catch(IOException e){ // Exit if any images not found
             System.out.println("Image not found!");
             System.exit(1);
@@ -174,6 +185,10 @@ public class PacManController extends JPanel implements ActionListener {
         graphics.drawImage(inky.getImage(), inky.getX(), inky.getY(), null);
         graphics.drawImage(clyde.getImage(), clyde.getX(), clyde.getY(), null);
 
+        if(isPaused){
+            g.drawString("Paused!", 13 * PIXELS, 20 * PIXELS);
+        }
+        g.drawString("Score: " + points, 13 * PIXELS, PIXELS);
     }
 
     /**
@@ -184,7 +199,17 @@ public class PacManController extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if(!isPaused && waiting <= 0) { // Waiting is initial delay before starting level
+
+            if(frightTimer > 0){
+                frightTimer--;
+            }else if(frightTimer == 0){
+                if(blinky.getMode() != Mode.DEAD){blinky.setMode(Mode.CHASE);}
+                if(pinky.getMode() != Mode.DEAD){pinky.setMode(Mode.CHASE);}
+                if(inky.getMode() != Mode.DEAD){inky.setMode(Mode.CHASE);}
+                if(clyde.getMode() != Mode.DEAD){clyde.setMode(Mode.CHASE);}
+            }
             pacMan.move();
+            checkCollision();
             blinky.move();
             pinky.move();
             inky.move();
@@ -197,6 +222,8 @@ public class PacManController extends JPanel implements ActionListener {
             waiting--;
             if(waiting < 60){
                 repaint();
+            }else if(waiting == 60){
+                respawn();
             }
         }
     }
@@ -208,28 +235,84 @@ public class PacManController extends JPanel implements ActionListener {
         isPaused = !isPaused;
     }
 
+    /**
+     * Checks collision with any ghosts and calls die() if any collide with a ghost that is not dead or frightened
+     */
     private void checkCollision(){
-        if(pacMan.getLocation().equals(blinky.getLocation()) || pacMan.getLocation().equals(pinky.getLocation()) ||
-                pacMan.getLocation().equals(inky.getLocation()) || pacMan.getLocation().equals(clyde.getLocation())){
-            die();
+        if(pacMan.getLocation().equals(blinky.getLocation())){
+            switch(blinky.getMode()){
+                case FRIGHTENED: blinky.die(); break;
+                case DEAD: break;
+                default: die(); return;
+            }
+        }
+        if(pacMan.getLocation().equals(clyde.getLocation())){
+            switch(clyde.getMode()){
+                case FRIGHTENED: clyde.die(); break;
+                case DEAD: break;
+                default: die(); return;
+            }
+        }
+        if(pacMan.getLocation().equals(pinky.getLocation())){
+            switch(pinky.getMode()){
+                case FRIGHTENED: pinky.die(); break;
+                case DEAD: break;
+                default: die(); return;
+            }
+        }
+        if(pacMan.getLocation().equals(inky.getLocation())){
+            switch(inky.getMode()){
+                case FRIGHTENED: inky.die(); break;
+                case DEAD: break;
+                default: die();
+            }
         }
     }
 
+    /**
+     * Adds 10 points per food pellet eaten
+     */
     public void eatFood(){
         points += 10;
     }
 
-    public void die(){
-        waiting = 100;
-        pacMan.restart();
+    /**
+     * Starts frightened mode for ~6 seconds TODO change this value as level increases
+     */
+    public void eatPower(){
+        blinky.setMode(Mode.FRIGHTENED);
+        pinky.setMode(Mode.FRIGHTENED);
+        inky.setMode(Mode.FRIGHTENED);
+        clyde.setMode(Mode.FRIGHTENED);
+        points += 190;
+        frightTimer = 180;
     }
 
+    /**
+     * Causes game to pause
+     */
+    public void die(){
+        waiting = 100;
+    }
+
+    /**
+     * Respawns everyone
+     */
+    private void respawn(){
+        pacMan.restart();
+        blinky.respawn();
+        inky.respawn();
+        pinky.respawn();
+        clyde.respawn();
+    }
+
+    /**
+     * Sets delay and restarts pacman and the grid
+     */
     public void nextLevel(){
         waiting = 100;
         grid.restart();
-        pacMan.restart();
     }
-
 
     /**
      * gets 2D array of map tiles
@@ -243,7 +326,7 @@ public class PacManController extends JPanel implements ActionListener {
                 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
                 {1, 3, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 3, 1, 1, 3, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 3, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
-                {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
+                {1, 7, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 7, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
                 {1, 3, 2, 2, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 2, 2, 3, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1},
@@ -253,9 +336,9 @@ public class PacManController extends JPanel implements ActionListener {
                 {0, 0, 0, 0, 0, 1, 2, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1, 0, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 1, 2, 1, 1, 4, 0, 0, 4, 4, 4, 4, 0, 0, 4, 1, 1, 2, 1, 0, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 5, 5, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
-                {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
-                {6, 0, 0, 0, 0, 0, 3, 0, 0, 4, 1, 0, 0, 0, 0, 0, 0, 1, 4, 0, 0, 3, 0, 0, 0, 0, 0, 6},
-                {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
+                {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 6, 6, 6, 6, 6, 6, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
+                {0, 0, 0, 0, 0, 0, 3, 0, 0, 4, 1, 6, 6, 6, 6, 6, 6, 1, 4, 0, 0, 3, 0, 0, 0, 0, 0, 0},
+                {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 6, 6, 6, 6, 6, 6, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
                 {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 1, 2, 1, 1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 1, 2, 1, 0, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
@@ -263,7 +346,7 @@ public class PacManController extends JPanel implements ActionListener {
                 {1, 3, 2, 2, 2, 2, 3, 2, 2, 3, 2, 2, 3, 1, 1, 3, 2, 2, 3, 2, 2, 3, 2, 2, 2, 2, 3, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
                 {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
-                {1, 3, 2, 3, 1, 1, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 1, 1, 3, 2, 3, 1},
+                {1, 7, 2, 3, 1, 1, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 1, 1, 3, 2, 7, 1},
                 {1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1},
                 {1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1},
                 {1, 3, 2, 3, 2, 2, 3, 1, 1, 3, 2, 2, 3, 1, 1, 3, 2, 2, 3, 1, 1, 3, 2, 2, 3, 2, 3, 1},
@@ -312,7 +395,7 @@ public class PacManController extends JPanel implements ActionListener {
 
         /**
          *  Not used
-         * @param e
+         * @param e Key Released Event
          */
         @Override
         public void keyReleased(KeyEvent e) {}

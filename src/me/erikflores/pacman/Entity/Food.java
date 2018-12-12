@@ -7,11 +7,13 @@ import me.erikflores.pacman.Location;
 import me.erikflores.pacman.Tile;
 
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 
 public class Food extends Entity {
 
-    private Rectangle food;
+    private Shape food;
     private Grid grid;
+    private boolean isPower = false;
 
 
     public Food(Tile tile, Grid grid){
@@ -28,6 +30,22 @@ public class Food extends Entity {
         return grid.removeFood(this);
     }
 
+    /**
+     * Sets to power pellet which causes frightened mode to happen when eaten
+     * Also visually bigger than regular food
+     */
+    public void setPower(){
+        isPower = true;
+        food = new Ellipse2D.Double(food.getBounds2D().getX() - 2, food.getBounds2D().getY() - 2, 8, 8);
+    }
+
+    /**
+     * @return true if is power pellet
+     */
+    public boolean isPower(){
+        return this.isPower;
+    }
+
     @Override
     public Location getLocation() {
         return null;
@@ -41,6 +59,11 @@ public class Food extends Entity {
 
     @Override
     public Direction getDirection() {
+        return null;
+    }
+
+    @Override
+    public Image getImage() {
         return null;
     }
 

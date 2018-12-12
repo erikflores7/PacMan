@@ -76,9 +76,7 @@ public class PacMan extends Entity {
             Tile newTile = grid.getTileAt(newLocation.getColumn(), newLocation.getRow());
 
             if (newTile != null) {
-                if(newTile.hasGhost()){
-                    grid.collided();
-                }else if(newTile.addEntity(this)) {
+                if(newTile.addEntity(this)) {
                     grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).removeEntity();
                     setLocation(newLocation);
                     moving = true;
@@ -91,13 +89,13 @@ public class PacMan extends Entity {
 
     }
 
+    /**
+     * Moves pacman in increments to next tile until it reaches it
+     */
     private void animate(){
 
         if(moving){
-
-            Direction direction = getDirection();
-
-            switch(direction){
+            switch(getDirection()){
                 case UP: spriteLocation.move(0, -5);
                     break;
                 case DOWN: spriteLocation.move(0, 5);
@@ -107,7 +105,7 @@ public class PacMan extends Entity {
                 case RIGHT: spriteLocation.move(5, 0);
                     break;
             }
-            counter++;
+            counter++; // Sprite counter for switching image
 
             Location destination = new Location(getLocation().getColumn() * size - 5, getLocation().getRow() * size - 5);
             if(destination.equals(spriteLocation)){
@@ -146,20 +144,22 @@ public class PacMan extends Entity {
         this.location = new Location(location);
     }
 
+    /**
+     * @return Current direction of Pacman
+     */
     @Override
     public Direction getDirection() {
         return this.direction;
     }
 
+    /**
+     * @return Queue'd up direction
+     */
     private Direction getNextDirection(){
         return this.nextDirection;
     }
 
     @Override
-    public Shape getShape() {
-        return null;
-    }
-
     public Image getImage(){
         int index = 0;
         switch(getDirection()){

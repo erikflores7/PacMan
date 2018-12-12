@@ -7,6 +7,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 public class Clyde extends Ghost {
 
@@ -16,7 +17,7 @@ public class Clyde extends Ghost {
     private static final Location SCATTER_TARGET = new Location(0, 35);
 
     public Clyde(Image[] sprites, PacMan pacMan, Grid grid, int size){
-        super("Clyde", sprites, size, new Location(13, 13));
+        super("Clyde", sprites, size, new Location(15, 16));
         this.pacMan = pacMan;
         this.grid = grid;
     }
@@ -32,41 +33,7 @@ public class Clyde extends Ghost {
             if(checkTunnel()){return;} // Check if in tunnel to change location to other side
 
             if (atIntersection){
-                List<Direction> possibleDirections = new ArrayList<>(Arrays.asList(Direction.values()));
-                possibleDirections.remove(getOppositeDirection()); // Can't reverse
-                Direction bestDirection = possibleDirections.get(0);
-                double smallestDistance = 100000;
-                for(Direction possible : possibleDirections){
-
-                    Tile nextTile = grid.getTileAt(getLocation().getColumn() + possible.getX(), getLocation().getRow() + possible.getY());
-                    if(nextTile == null || nextTile.isWall() || (nextTile.isGhostDoor() && getMode() != Mode.FRIGHTENED)){
-                        continue;
-                    }
-
-                    double x, y;
-                    if(getMode() == Mode.CHASE) {
-                        x = (pacMan.getLocation().getColumn()) - (nextTile.getLocation().getColumn());
-                        y = (pacMan.getLocation().getRow()) - (nextTile.getLocation().getRow());
-                    }else{
-                        x = (SCATTER_TARGET.getColumn()) - (nextTile.getLocation().getColumn());
-                        y = (SCATTER_TARGET.getRow()) - (nextTile.getLocation().getRow());
-                    }
-
-                    double distance = Math.sqrt((x * x) + (y * y)); // Distance to PacMan
-                    if(distance <= 8){ // If he is within 8 tiles of Pacman go back to Scatter target instead
-                        x = (SCATTER_TARGET.getColumn() - nextTile.getLocation().getColumn());
-                        y = (SCATTER_TARGET.getRow() - nextTile.getLocation().getRow());
-                    }
-                    distance = Math.sqrt((x * x) + (y * y)); // Distance to his scatter target
-
-                    if(distance < smallestDistance){
-                        bestDirection = possible;
-                        smallestDistance = distance;
-                    }else if(distance == smallestDistance){ // Get one with priority
-                        bestDirection = getBestDirection(possible, bestDirection);
-                    }
-                }
-                setDirection(bestDirection);
+                changeDirection();
             }
 
             Location newLocation = new Location(getLocation());
@@ -103,6 +70,66 @@ public class Clyde extends Ghost {
         }
 
         return false;
+    }
+
+    private void changeDirection(){
+        List<Direction> possibleDirections = new ArrayList<>(Arrays.asList(Direction.values()));
+
+        if(getMode() == Mode.FRIGHTENED){
+            while(true) {
+                setDirection(possibleDirections.get(new Random().nextInt(4)));
+                Tile next = grid.getTileAt(getLocation().getColumn() + getDirection().getX(), getLocation().getRow() + getDirection().getY());
+                if(!next.isWall() && !next.isGhostDoor()) {
+                    return;
+                }
+            }
+        }
+
+        if(getMode() == Mode.GHOST_HOUSE){
+            setDirection(getOppositeDirection());
+            return;
+        }
+
+        possibleDirections.remove(getOppositeDirection()); // Can't reverse
+        Direction bestDirection = possibleDirections.get(0);
+        double smallestDistance = 100000;
+        for(Direction possible : possibleDirections){
+
+            Tile nextTile = grid.getTileAt(getLocation().getColumn() + possible.getX(), getLocation().getRow() + possible.getY());
+            if(nextTile == null || nextTile.isWall() || (nextTile.isGhostDoor() && possible == Direction.DOWN && getMode() != Mode.DEAD)){
+                continue;
+            }
+
+            double x, y;
+            if(grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).isGhostHouse()) { // get out of it
+                x = getSpawn().getColumn() - nextTile.getLocation().getColumn();
+                y = getSpawn().getRow() - 10 - nextTile.getLocation().getRow();
+                setMode(Mode.CHASE);
+            }else if(getMode() == Mode.CHASE) {
+                x = (pacMan.getLocation().getColumn()) - (nextTile.getLocation().getColumn());
+                y = (pacMan.getLocation().getRow()) - (nextTile.getLocation().getRow());
+            }else if(getMode() == Mode.SCATTER){
+                x = (SCATTER_TARGET.getColumn()) - (nextTile.getLocation().getColumn());
+                y = (SCATTER_TARGET.getRow()) - (nextTile.getLocation().getRow());
+            }else{ // DEAD
+                x = (getSpawn().getColumn() - (nextTile.getLocation().getColumn()));
+                y = (getSpawn().getRow() - (nextTile.getLocation().getRow()));
+            }
+
+            double distance = Math.sqrt((x * x) + (y * y)); // Distance to PacMan
+            if(distance <= 8 && getMode() == Mode.CHASE){ // If he is within 8 tiles of Pacman go back to Scatter target instead
+                x = (SCATTER_TARGET.getColumn() - nextTile.getLocation().getColumn());
+                y = (SCATTER_TARGET.getRow() - nextTile.getLocation().getRow());
+                distance = Math.sqrt((x * x) + (y * y)); // Distance to his scatter target
+            }
+            if(distance < smallestDistance){
+                bestDirection = possible;
+                smallestDistance = distance;
+            }else if(distance == smallestDistance){ // Get one with priority
+                bestDirection = getBestDirection(possible, bestDirection);
+            }
+        }
+        setDirection(bestDirection);
     }
 
 }

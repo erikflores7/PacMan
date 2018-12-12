@@ -2,6 +2,6 @@ package me.erikflores.pacman;
 
 public enum Mode {
 
-    SCATTER, CHASE, FRIGHTENED;
+    GHOST_HOUSE, SCATTER, CHASE, FRIGHTENED, DEAD;
 
 }

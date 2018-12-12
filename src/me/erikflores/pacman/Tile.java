@@ -10,26 +10,12 @@ import java.awt.*;
 public class Tile{
 
     private Location location;
-    private Color color;
-    private Rectangle tile;
     private Entity entity;
     private Food food;
-    private boolean wall, intersection, ghostDoor, tunnel = false;
+    private boolean wall, intersection, ghostDoor, ghostHouse = false;
 
-    public Tile(int pixels, Location location){
+    public Tile(Location location){
         this.location = new Location(location);
-
-        color = Color.BLACK;
-
-        tile = new Rectangle(location.getColumn() * pixels, location.getRow() * pixels, pixels, pixels);
-    }
-
-    public Shape getShape(){
-        return tile;
-    }
-
-    public Color getColor(){
-        return this.color;
     }
 
     public Location getLocation(){
@@ -51,9 +37,6 @@ public class Tile{
             this.food = (Food) entity;
             return true;
         }else if(entity instanceof Ghost){
-            if(isGhostDoor() && entity.getDirection() == Direction.DOWN){
-                return false;
-            }
         }
 
         this.entity = entity;
@@ -70,9 +53,6 @@ public class Tile{
 
     public void setWall(boolean wall){
         this.wall = wall;
-        if(isWall()){
-            color = Color.BLUE;
-        }
     }
 
     public boolean isWall(){
@@ -88,16 +68,16 @@ public class Tile{
     }
 
     public void setGhostDoor(boolean door){
-        this.ghostDoor = true;
+        this.ghostDoor = door;
     }
 
     public boolean isGhostDoor(){
         return this.ghostDoor;
     }
 
-    public void setTunnel(boolean tunnel){ this.tunnel = tunnel;}
-    public boolean isTunnel(){ return this.tunnel;}
+    public void setGhostHouse(boolean house){ this.ghostHouse = house; }
 
+    public boolean isGhostHouse(){ return this.ghostHouse; }
 
     public boolean hasFood(){
         return (food != null);
