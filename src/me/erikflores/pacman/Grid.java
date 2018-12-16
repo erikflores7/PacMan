@@ -173,10 +173,11 @@ public class Grid {
     }
 
     /**
-     * Clears the tiles
+     * Clears the tiles and food
      */
     public void clear(){
         tiles.clear();
+        foods.clear();
     }
 
     public void restart(){

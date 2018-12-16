@@ -49,7 +49,7 @@ public class PacMan extends Entity {
     @Override
     public void move() {
 
-        if(!moving) {
+        if(!isMoving()) {
 
             if(checkTunnel()){ return;}
 
@@ -64,7 +64,7 @@ public class PacMan extends Entity {
                     setLocation(newLocation);
                     this.direction = getNextDirection();
                     this.nextDirection = null;
-                    moving = true;
+                    setMoving(true);
                     animate();
                     return;
                 }
@@ -79,7 +79,7 @@ public class PacMan extends Entity {
                 if(newTile.addEntity(this)) {
                     grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).removeEntity();
                     setLocation(newLocation);
-                    moving = true;
+                    setMoving(true);
                     animate();
                 }
             }
@@ -94,7 +94,7 @@ public class PacMan extends Entity {
      */
     private void animate(){
 
-        if(moving){
+        if(isMoving()){
             switch(getDirection()){
                 case UP: spriteLocation.move(0, -5);
                     break;
@@ -109,7 +109,7 @@ public class PacMan extends Entity {
 
             Location destination = new Location(getLocation().getColumn() * size - 5, getLocation().getRow() * size - 5);
             if(destination.equals(spriteLocation)){
-                moving = false;
+                setMoving(false);
             }
         }
     }
@@ -175,11 +175,13 @@ public class PacMan extends Entity {
     }
 
     public void restart(){
+        counter = 0;
         setLocation(spawn);
-        moving = false;
+        setMoving(false);
         spriteLocation = new Location(getLocation().getColumn() * size - 5, getLocation().getRow() * size - 5);
         grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).addEntity(this);
         this.direction = null;
+        this.nextDirection = null;
         setDirection(Direction.LEFT);
     }
 
@@ -189,18 +191,26 @@ public class PacMan extends Entity {
             setLocation(new Location(0, 16));
             grid.getTileAt(0, 16).addEntity(this);
             this.spriteLocation = new Location(getLocation().getColumn() * 20 - 10, getLocation().getRow() * 20 - 5);
-            this.moving = true;
+            setMoving(true);
             return true;
         }else if(getLocation().getColumn() == 0 && getDirection() == Direction.LEFT && getLocation().getRow() == 16){
             grid.getTileAt(getLocation().getColumn(), getLocation().getRow()).removeEntity();
             setLocation(new Location(27, 16));
             grid.getTileAt(27, 16).addEntity(this);
             this.spriteLocation = new Location(getLocation().getColumn() * 20, getLocation().getRow() * 20 - 5);
-            this.moving = true;
+            setMoving(true);
             return true;
         }
 
         return false;
+    }
+
+    private boolean isMoving(){
+        return this.moving;
+    }
+
+    private void setMoving(boolean moving){
+        this.moving = moving;
     }
 
     public int getX(){

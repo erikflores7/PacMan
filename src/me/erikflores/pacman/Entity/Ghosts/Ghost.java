@@ -58,14 +58,18 @@ public abstract class Ghost extends Entity {
 
         int index = 0;
 
-        if(getMode() == Mode.DEAD){
+        if(getMode() == Mode.DEAD){ // TODO: Add 3 other directions
             return sprites[40];
         }
         if(getMode() == Mode.FRIGHTENED){
+            index = 44;
             if (spriteCounter % 4 == 0 || spriteCounter % 4 == 3) {
-                return sprites[44];
+                if(PacManController.frightTimer > 0 && PacManController.frightTimer <= 30){ // Start flashing
+                    index = 46;
+                }
+                return sprites[index];
             }
-            return sprites[45];
+            return sprites[index + 1];
         }
         switch (getName()) {
             case "Blinky":
@@ -217,7 +221,7 @@ public abstract class Ghost extends Entity {
         }
     }
 
-    void setSpeed(int speed){
+    private void setSpeed(int speed){
         this.speed = speed;
     }
 
@@ -241,6 +245,8 @@ public abstract class Ghost extends Entity {
         setLocation(spawnLocation);
         this.spriteLocation = new Location(getLocation().getColumn() * size - 5, getLocation().getRow() * size - 5);
     }
+
+
 
     public void die(){
         setMode(Mode.DEAD);

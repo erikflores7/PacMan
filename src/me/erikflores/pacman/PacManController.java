@@ -22,6 +22,7 @@ import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * Controls the Display of the game PacMan as well as the main game loop
@@ -31,13 +32,13 @@ public class PacManController extends JPanel implements ActionListener {
 
     private static final int WIDTH = 560;
     private static final int HEIGHT = 620;
-    //private static final int DELAY = 45;
     private static final int DELAY = 35;
     private static final int PIXELS = 20;
 
     private boolean isPaused = true;
     private int waiting = 100;
-    private int frightTimer = 0;
+    public static int frightTimer = 0;
+    private int lives = 4;
 
     private Image mapImage;
     private Image[] sprites = new Image[64];
@@ -135,6 +136,10 @@ public class PacManController extends JPanel implements ActionListener {
             // Frightened
             sprites[44] = spriteSheet.getSubimage(132, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
             sprites[45] = spriteSheet.getSubimage(148, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[46] = spriteSheet.getSubimage(164, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[47] = spriteSheet.getSubimage(180, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+
+
 
 
 
@@ -272,14 +277,14 @@ public class PacManController extends JPanel implements ActionListener {
     /**
      * Adds 10 points per food pellet eaten
      */
-    public void eatFood(){
+    void eatFood(){
         points += 10;
     }
 
     /**
      * Starts frightened mode for ~6 seconds TODO change this value as level increases
      */
-    public void eatPower(){
+    void eatPower(){
         blinky.setMode(Mode.FRIGHTENED);
         pinky.setMode(Mode.FRIGHTENED);
         inky.setMode(Mode.FRIGHTENED);
@@ -289,10 +294,17 @@ public class PacManController extends JPanel implements ActionListener {
     }
 
     /**
-     * Causes game to pause
+     * Causes game to pause and decreases lives
      */
-    public void die(){
+    void die(){
         waiting = 100;
+        lives--;
+        if(lives == 0){
+            saveScore();
+            grid.restart();
+            points = 0;
+            lives = 3;
+        }
     }
 
     /**
@@ -307,11 +319,19 @@ public class PacManController extends JPanel implements ActionListener {
     }
 
     /**
-     * Sets delay and restarts pacman and the grid
+     * Sets delay and restarts the grid
      */
-    public void nextLevel(){
+    void nextLevel(){
         waiting = 100;
         grid.restart();
+    }
+
+    private void saveScore(){
+        try {
+            PrintWriter writer = new PrintWriter("highScores.txt", "UTF-8");
+            writer.println("AAA " + points);
+            writer.close();
+        }catch(IOException e){}
     }
 
     /**
@@ -378,15 +398,19 @@ public class PacManController extends JPanel implements ActionListener {
         public void keyPressed(KeyEvent e) {
             switch(e.getKeyCode()){
                 case KeyEvent.VK_W: // W, try to go upward
+                case KeyEvent.VK_UP:  // Up Arrow
                     pacMan.setDirection(Direction.UP);
                     break;
                 case KeyEvent.VK_S: // S, try to go downward
+                case KeyEvent.VK_DOWN:
                     pacMan.setDirection(Direction.DOWN);
                     break;
                 case KeyEvent.VK_A: // A, try to go left
+                case KeyEvent.VK_LEFT:
                     pacMan.setDirection(Direction.LEFT);
                     break;
                 case KeyEvent.VK_D: // D, try to go right
+                case KeyEvent.VK_RIGHT:
                     pacMan.setDirection(Direction.RIGHT);
                     break;
                 case KeyEvent.VK_SPACE: togglePause(); break; // Space, toggle pause
