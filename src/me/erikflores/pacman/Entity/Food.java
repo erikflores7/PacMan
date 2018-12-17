@@ -1,7 +1,6 @@
 package me.erikflores.pacman.Entity;
 
 import me.erikflores.pacman.Direction;
-import me.erikflores.pacman.Entity.Entity;
 import me.erikflores.pacman.Grid;
 import me.erikflores.pacman.Location;
 import me.erikflores.pacman.Tile;
@@ -36,7 +35,7 @@ public class Food extends Entity {
      */
     public void setPower(){
         isPower = true;
-        food = new Ellipse2D.Double(food.getBounds2D().getX() - 2, food.getBounds2D().getY() - 2, 8, 8);
+        food = new Ellipse2D.Double(food.getBounds2D().getX() - 3, food.getBounds2D().getY() - 3, 10, 10);
     }
 
     /**

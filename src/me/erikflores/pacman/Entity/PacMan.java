@@ -6,6 +6,8 @@ import me.erikflores.pacman.Location;
 import me.erikflores.pacman.Tile;
 
 import java.awt.*;
+import java.util.ArrayList;
+
 /**
  *  Actual PacMan, handles its movement
  */

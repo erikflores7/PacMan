@@ -5,6 +5,7 @@ package me.erikflores.pacman;
  * Date: December 4, 2018
  *
  */
+import me.erikflores.pacman.Entity.Entity;
 import me.erikflores.pacman.Entity.Food;
 import me.erikflores.pacman.Entity.Ghosts.Blinky;
 import me.erikflores.pacman.Entity.Ghosts.Clyde;
@@ -35,7 +36,7 @@ public class PacManController extends JPanel implements ActionListener {
     private static final int DELAY = 35;
     private static final int PIXELS = 20;
 
-    private boolean isPaused = true;
+    private boolean isPaused = false;
     private int waiting = 100;
     public static int frightTimer = 0;
     private int lives = 4;
@@ -132,16 +133,14 @@ public class PacManController extends JPanel implements ActionListener {
             // Eyes
             sprites[40] = spriteSheet.getSubimage(132, 81, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
             sprites[41] = spriteSheet.getSubimage(148, 81, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[42] = spriteSheet.getSubimage(164, 81, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
+            sprites[43] = spriteSheet.getSubimage(180, 81, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
 
             // Frightened
             sprites[44] = spriteSheet.getSubimage(132, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
             sprites[45] = spriteSheet.getSubimage(148, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
             sprites[46] = spriteSheet.getSubimage(164, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
             sprites[47] = spriteSheet.getSubimage(180, 65, 14, 14).getScaledInstance(30, 30, Image.SCALE_DEFAULT);
-
-
-
-
 
         }catch(IOException e){ // Exit if any images not found
             System.out.println("Image not found!");
@@ -326,6 +325,7 @@ public class PacManController extends JPanel implements ActionListener {
         grid.restart();
     }
 
+    //TODO check highest score and display them at end
     private void saveScore(){
         try {
             PrintWriter writer = new PrintWriter("highScores.txt", "UTF-8");

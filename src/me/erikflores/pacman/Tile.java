@@ -22,6 +22,7 @@ public class Tile{
         return this.location;
     }
 
+    // TODO update this, most of it is no longer needed
     public boolean addEntity(Entity entity){
         if(isWall()) {
             return false;
@@ -36,7 +37,6 @@ public class Tile{
         }else if(entity instanceof Food){
             this.food = (Food) entity;
             return true;
-        }else if(entity instanceof Ghost){
         }
 
         this.entity = entity;

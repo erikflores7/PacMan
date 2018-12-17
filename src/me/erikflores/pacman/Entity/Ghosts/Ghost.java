@@ -58,8 +58,14 @@ public abstract class Ghost extends Entity {
 
         int index = 0;
 
-        if(getMode() == Mode.DEAD){ // TODO: Add 3 other directions
-            return sprites[40];
+        if(getMode() == Mode.DEAD){ // TODO: Clean this up with just one switch
+            switch (getDirection()) {
+                case UP: index = 42; break;
+                case DOWN: index = 43; break;
+                case LEFT: index = 41; break;
+                case RIGHT: index = 40; break;
+            }
+            return sprites[index];
         }
         if(getMode() == Mode.FRIGHTENED){
             index = 44;
@@ -128,6 +134,9 @@ public abstract class Ghost extends Entity {
         return spriteLocation.getRow();
     }
 
+    /**
+     * Adjusts sprite's location based on direction and checks if movement has ended
+     */
     public void animate(){
         if(moving){
             switch(getDirection()){
@@ -194,6 +203,10 @@ public abstract class Ghost extends Entity {
         return mode;
     }
 
+    /**
+     *  Sets mode of Ghost, waits for movement to end before changing speed/direction
+     * @param newMode Mode to set to
+     */
     public void setMode(Mode newMode){
         mode = newMode;
         if(isMoving()) {
@@ -201,7 +214,6 @@ public abstract class Ghost extends Entity {
             Thread t = new Thread(() -> {
                 while(isMoving()){
                     try { Thread.sleep(10); } catch(InterruptedException e) { /* we tried */}
-
                 }
                 if (!isMoving()) {
                     switch(getMode()){
@@ -237,6 +249,9 @@ public abstract class Ghost extends Entity {
         return this.spawnLocation;
     }
 
+    /**
+     * Resets everything including location
+     */
     public void respawn(){
         setMode(Mode.CHASE);
         setMoving(false);
@@ -247,7 +262,9 @@ public abstract class Ghost extends Entity {
     }
 
 
-
+    /**
+     * Sets mode to DEAD and resets sprite counter
+     */
     public void die(){
         setMode(Mode.DEAD);
         spriteCounter = 0;
